@@ -22,26 +22,18 @@ export async function loader({ request }: LoaderArgs) {
 	return json({
 		users,
 		canImpersonate: !isImpersonating,
-		isImpersonating: isImpersonating,
 	})
 }
 
 function Users() {
-	const user = useUser()
-	const { users, canImpersonate, isImpersonating } =
-		useLoaderData<typeof loader>()
+	const currentUser = useUser()
+	const { users, canImpersonate } = useLoaderData<typeof loader>()
 
 	return (
 		<div className="flex flex-col items-center gap-10">
 			<h1 className="mx-auto max-w-xl text-2xl font-bold">Users</h1>
-			{isImpersonating && (
-				<Form method="post" action="/impersonate" className="flex">
-					<input type="hidden" name="intent" value="stop" />
-					<Button type="submit">Stop Impersonating {user.username}</Button>
-				</Form>
-			)}
 			<table className="mx-auto border-collapse">
-				<thead className="">
+				<thead>
 					<tr>
 						<th className=" p-4 text-left">Name</th>
 						<th className=" p-4 text-left">Email</th>
@@ -50,7 +42,7 @@ function Users() {
 						<th className=" p-4 text-left">Impersonate</th>
 					</tr>
 				</thead>
-				<tbody className="">
+				<tbody>
 					{users.map(user => (
 						<tr className="" key={user.id}>
 							<td className=" p-4">{user.name}</td>
@@ -59,7 +51,7 @@ function Users() {
 							<td className=" p-4">
 								{user.roles.map(role => role.name).join(', ')}
 							</td>
-							{canImpersonate && (
+							{canImpersonate && currentUser.id !== user.id && (
 								<td className="p-4">
 									<Form method="post" action="/impersonate" className="flex">
 										<input type="hidden" name="intent" value="start" />

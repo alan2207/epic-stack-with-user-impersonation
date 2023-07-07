@@ -18,12 +18,19 @@ export async function action({ request }: ActionArgs) {
 	const cookieSession = await getSession(request.headers.get('cookie'))
 
 	if (intent === 'start') {
-		await requireAdmin(request)
+		const userId = body.get('userId')?.toString()
+
+		invariant(userId, 'Must provide a userId')
+
+		const admin = await requireAdmin(request)
+
+		invariant(userId !== admin.id, 'Self impersonation not allowed')
+
 		const currentSessionId = cookieSession.get(authenticator.sessionKey)
 
 		const impersonatorSession = await prisma.session.create({
 			data: {
-				userId: body.get('userId') as string,
+				userId: userId,
 				expirationDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
 			},
 		})
