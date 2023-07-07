@@ -1,54 +1,24 @@
-<div align="center">
-  <h1 align="center"><a href="https://www.epicweb.dev/epic-stack">The Epic Stack 🚀</a></h1>
-  <strong align="center">
-    Ditch analysis paralysis and start shipping Epic Web apps.
-  </strong>
-  <p>
-    This is an opinionated project starter and reference that allows teams to
-    ship their ideas to production faster and on a more stable foundation based
-    on the experience of <a href="https://kentcdodds.com">Kent C. Dodds</a> and
-    <a href="https://github.com/epicweb-dev/epic-stack/graphs/contributors">contributors</a>.
-  </p>
-</div>
+# Epic Stack with User Impersonation
 
-```sh
-npx create-remix@latest --typescript --install --template epicweb-dev/epic-stack
-```
+User impersonation is a feature that allows admin users to log in as any other
+user without knowing their password. This is useful for troubleshooting issues
+that a user may be experiencing.
 
-[![The Epic Stack](https://github-production-user-asset-6210df.s3.amazonaws.com/1500684/246885449-1b00286c-aa3d-44b2-9ef2-04f694eb3592.png)](https://www.epicweb.dev/epic-stack)
+This demonstrates how to implement this feature in an Epic Stack application.
 
-[The Epic Stack](https://www.epicweb.dev/epic-stack)
+![Demo](./demo.gif)
 
-<hr />
+## How it works
 
-## Watch Kent's Introduction to The Epic Stack
+When an admin user wants to impersonate another user, we need to:
 
-[![screenshot of a YouTube video](https://github-production-user-asset-6210df.s3.amazonaws.com/1500684/242088051-6beafa78-41c6-47e1-b999-08d3d3e5cb57.png)](https://www.youtube.com/watch?v=yMK5SVRASxM)
+- Get current session ID from the cookie and store it in the session as
+  `impersonatorSessionId`
+- Create a new session for the user we want to impersonate and store it in the
+  cookie as `sessionId`
 
-["The Epic Stack" by Kent C. Dodds at #RemixConf 2023 💿](https://www.youtube.com/watch?v=yMK5SVRASxM)
+When the user stops impersonating, we need to:
 
-## Docs
-
-[Read the docs](https://github.com/epicweb-dev/epic-stack/blob/main/docs)
-(please 🙏).
-
-## Support
-
-- 🆘 Join the
-  [discussion on GitHub](https://github.com/epicweb-dev/epic-stack/discussions)
-  and the [KCD Community on Discord](https://kcd.im/discord).
-- 💡 Create an
-  [idea discussion](https://github.com/epicweb-dev/epic-stack/discussions/new?category=ideas)
-  for suggestions.
-- 🐛 Open a [GitHub issue](https://github.com/epicweb-dev/epic-stack/issues) to
-  report a bug.
-
-## Branding
-
-Want to talk about the Epic Stack in a blog post or talk? Great! Here are some
-assets you can use in your material:
-[EpicWeb.dev/brand](https://epicweb.dev/brand)
-
-## Thanks
-
-You rock 🪨
+- Take the session ID stored in `impersonatorSessionId` and assign it to
+  `sessionId`, which will restore the original admin session.
+- Clear `impersonatorSessionId` from the cookie
