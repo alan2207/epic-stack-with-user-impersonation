@@ -4,7 +4,9 @@ User impersonation is a feature that allows admin users to log in as any other
 user without knowing their password. This is useful for troubleshooting issues
 that a user may be experiencing.
 
-This demonstrates how to implement this feature in an Epic Stack application.
+This example demonstrates how to implement this feature in an Epic Stack application.
+
+## Demo:
 
 ![Demo](./demo.gif)
 
@@ -12,7 +14,7 @@ This demonstrates how to implement this feature in an Epic Stack application.
 
 When an admin user wants to impersonate another user, we need to:
 
-- Get current session ID from the cookie and store it in the session as
+- Get the current session ID from the cookie and store it in the session as
   `impersonatorSessionId`
 - Create a new session for the user we want to impersonate and store it in the
   cookie as `sessionId`
