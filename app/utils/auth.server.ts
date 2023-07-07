@@ -4,7 +4,7 @@ import { Authenticator } from 'remix-auth'
 import { FormStrategy } from 'remix-auth-form'
 import invariant from 'tiny-invariant'
 import { prisma } from '~/utils/db.server.ts'
-import { sessionStorage } from './session.server.ts'
+import { getSession, sessionStorage } from './session.server.ts'
 import { redirect } from '@remix-run/node'
 
 export type { User }
@@ -12,6 +12,8 @@ export type { User }
 export const authenticator = new Authenticator<string>(sessionStorage, {
 	sessionKey: 'sessionId',
 })
+
+export const IMPERSONATOR_SESSION_KEY = 'impersonatorSessionId'
 
 const SESSION_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 30
 
@@ -171,4 +173,28 @@ export async function verifyLogin(
 	}
 
 	return { id: userWithPassword.id }
+}
+
+export const getImpersonator = async (request: Request) => {
+	const cookieSession = await getSession(request.headers.get('cookie'))
+
+	const impersonatorSessionId = cookieSession.get(IMPERSONATOR_SESSION_KEY)
+
+	if (!impersonatorSessionId) {
+		return null
+	}
+
+	const session = await prisma.session.findUnique({
+		where: { id: impersonatorSessionId },
+	})
+
+	if (!session) {
+		return null
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { id: session?.userId },
+	})
+
+	return { user, session }
 }

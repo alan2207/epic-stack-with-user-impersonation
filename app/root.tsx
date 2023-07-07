@@ -23,7 +23,11 @@ import { ThemeSwitch, useTheme } from './routes/resources+/theme/index.tsx'
 import { getTheme } from './routes/resources+/theme/theme-session.server.ts'
 import fontStylestylesheetUrl from './styles/font.css'
 import tailwindStylesheetUrl from './styles/tailwind.css'
-import { authenticator, getUserId } from './utils/auth.server.ts'
+import {
+	authenticator,
+	getImpersonator,
+	getUserId,
+} from './utils/auth.server.ts'
 import { ClientHintCheck, getHints } from './utils/client-hints.tsx'
 import { prisma } from './utils/db.server.ts'
 import { getEnv } from './utils/env.server.ts'
@@ -93,7 +97,13 @@ export async function loader({ request }: DataFunctionArgs) {
 				() =>
 					prisma.user.findUnique({
 						where: { id: userId },
-						select: { id: true, name: true, username: true, imageId: true },
+						select: {
+							id: true,
+							name: true,
+							username: true,
+							imageId: true,
+							roles: true,
+						},
 					}),
 				{ timings, type: 'find user', desc: 'find user in root' },
 		  )
@@ -106,9 +116,12 @@ export async function loader({ request }: DataFunctionArgs) {
 	}
 	const { flash, headers: flashHeaders } = await getFlashSession(request)
 
+	const impersonator = (await getImpersonator(request))?.user
+	const userWithRoles = { ...user, roles: user?.roles.map(role => role.name) }
 	return json(
 		{
-			user,
+			user: userWithRoles,
+			impersonator,
 			requestInfo: {
 				hints: getHints(request),
 				origin: getDomainUrl(request),
@@ -203,8 +216,9 @@ export default withSentry(App)
 
 function UserDropdown() {
 	const user = useUser()
+	const { impersonator } = useLoaderData<typeof loader>()
 	const submit = useSubmit()
-	const formRef = useRef<HTMLFormElement>(null)
+	const logoutFormRef = useRef<HTMLFormElement>(null)
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -228,6 +242,18 @@ function UserDropdown() {
 			</DropdownMenuTrigger>
 			<DropdownMenuPortal>
 				<DropdownMenuContent sideOffset={8} align="start">
+					{impersonator && (
+						<DropdownMenuItem asChild>
+							<Form action="/impersonate" method="POST">
+								<input type="hidden" name="intent" value="stop" />
+								<Button className="bg-white">
+									<Icon className="text-body-md" name="exit">
+										Stop Impersonating {user.username}
+									</Icon>
+								</Button>
+							</Form>
+						</DropdownMenuItem>
+					)}
 					<DropdownMenuItem asChild>
 						<Link prefetch="intent" to={`/users/${user.username}`}>
 							<Icon className="text-body-md" name="avatar">
@@ -242,15 +268,24 @@ function UserDropdown() {
 							</Icon>
 						</Link>
 					</DropdownMenuItem>
+					{user.roles?.includes('admin') && (
+						<DropdownMenuItem asChild>
+							<Link prefetch="intent" to={`/admin/users`}>
+								<Icon className="text-body-md" name="lock-closed">
+									Manage Users
+								</Icon>
+							</Link>
+						</DropdownMenuItem>
+					)}
 					<DropdownMenuItem
 						asChild
 						// this prevents the menu from closing before the form submission is completed
 						onSelect={event => {
 							event.preventDefault()
-							submit(formRef.current)
+							submit(logoutFormRef.current)
 						}}
 					>
-						<Form action="/logout" method="POST" ref={formRef}>
+						<Form action="/logout" method="POST" ref={logoutFormRef}>
 							<Icon className="text-body-md" name="exit">
 								<button type="submit">Logout</button>
 							</Icon>
